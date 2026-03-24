@@ -1,0 +1,4 @@
+[workspace]
+members = ["crates/wl-mitmproxy"]
+default-members = ["crates/wl-mitmproxy"]
+resolver = "2"
