@@ -4,10 +4,12 @@
 It sits between a client and the compositor socket, forwards normal Wayland
 traffic, and rewrites selected protocol messages in transit.
 
-The current release focuses on `xdg_toplevel.set_app_id`. That makes it useful
-when a Wayland client advertises an application ID that does not match the
-desktop entry you want the shell to associate with the window. The project is
-structured so additional message transformations can be added over time.
+The current release rewrites `xdg_toplevel.set_app_id` and
+`xdg_toplevel.set_title`. That makes it useful when a Wayland client advertises
+an application ID that does not match the desktop entry you want the shell to
+associate with the window, or when you want to override the window title
+metadata exposed to the compositor. The project is structured so additional
+message transformations can be added over time.
 
 ## What it does
 
@@ -44,13 +46,13 @@ is a good option because it is simple to launch directly through the proxy.
 Daemon mode:
 
 ```text
-wl-mitmproxy --app-id <APP_ID> --proxy-socket <NAME_OR_PATH> [--proxy-runtime-dir <PATH>]
+wl-mitmproxy [OPTIONS] --proxy-socket <NAME_OR_PATH> [--proxy-runtime-dir <PATH>]
 ```
 
 Run mode:
 
 ```text
-wl-mitmproxy --app-id <APP_ID> \
+wl-mitmproxy [OPTIONS] \
 	[--proxy-socket <NAME_OR_PATH>] \
 	[--proxy-runtime-dir <PATH>] \
 	-- <COMMAND> [ARGS...]
@@ -58,6 +60,13 @@ wl-mitmproxy --app-id <APP_ID> \
 
 The `--` separator is the conventional boundary between `wl-mitmproxy` options
 and the command that should be launched through the proxy.
+
+Current rewrite options:
+
+- `--app-id <APP_ID>` rewrites `xdg_toplevel.set_app_id`.
+- `--title <TITLE>` rewrites `xdg_toplevel.set_title`.
+
+At least one rewrite option must be supplied.
 
 ## Daemon mode
 
@@ -76,7 +85,7 @@ until it is terminated.
 To launch a client against that daemon socket:
 
 ```bash
-WAYLAND_DISPLAY=wayland-mitmproxy foot --title Firefox
+WAYLAND_DISPLAY=wayland-mitmproxy foot
 ```
 
 Socket selection in daemon mode:
@@ -94,7 +103,7 @@ wl-mitmproxy --app-id=firefox_firefox --proxy-socket=wayland-mitmproxy
 ```
 
 ```bash
-WAYLAND_DISPLAY=wayland-mitmproxy foot --title Firefox
+WAYLAND_DISPLAY=wayland-mitmproxy foot
 ```
 
 If you use a custom proxy runtime directory, clients must point at it
@@ -106,7 +115,7 @@ wl-mitmproxy \
 	--proxy-runtime-dir=/tmp/wl-mitmproxy \
 	--proxy-socket=wayland-mitmproxy
 
-XDG_RUNTIME_DIR=/tmp/wl-mitmproxy WAYLAND_DISPLAY=wayland-mitmproxy foot --title Firefox
+XDG_RUNTIME_DIR=/tmp/wl-mitmproxy WAYLAND_DISPLAY=wayland-mitmproxy foot
 ```
 
 ## Run mode
@@ -114,7 +123,7 @@ XDG_RUNTIME_DIR=/tmp/wl-mitmproxy WAYLAND_DISPLAY=wayland-mitmproxy foot --title
 Run mode is selected when a child command is provided after `--`.
 
 ```bash
-wl-mitmproxy --app-id=firefox_firefox -- foot --title Firefox
+wl-mitmproxy --app-id=firefox_firefox --title=Firefox -- foot --title Changeme
 ```
 
 In run mode the proxy:
@@ -135,6 +144,17 @@ In run mode the proxy:
 If the override is accepted by the client and the supplied app ID matches a
 desktop entry installed on the system, the desktop shell may present the window
 using the associated launcher icon and taskbar identity.
+
+Title overrides affect `xdg_toplevel` metadata seen by the compositor and shell.
+Whether that also changes the text drawn in a visible title bar depends on how
+the client and compositor handle window decorations. Applications that draw
+their own title bars may continue showing their internal title string even when
+the compositor-visible title has been rewritten.
+
+Side note: to confirm title rewriting, inspect compositor-visible window
+metadata in tools such as Looking Glass, compositor debug views, or window
+switcher/overview UIs rather than relying only on the text painted in a client
+decoration.
 
 This is most reliable for applications that create their primary Wayland toplevel
 window in the process started by `wl-mitmproxy`.

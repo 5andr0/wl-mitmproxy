@@ -1,6 +1,6 @@
 [package]
 name = "wl-mitmproxy"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Wayland MITM proxy for rewriting protocol messages"
 license = "MIT OR Apache-2.0"
