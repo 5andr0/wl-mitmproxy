@@ -13,5 +13,5 @@ readme = "README.md"
 [dependencies]
 clap = { version = "4.6.0", features = ["derive", "env"] }
 libc = "0.2"
-signal-hook = "0.3"
+signal-hook = "0.4.3"
 wl-proxy = { version = "0.1.1", features = ["protocol-xdg_shell"] }

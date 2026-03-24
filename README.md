@@ -30,6 +30,12 @@ the proxied window.
 cargo build --release
 ```
 
+## Install
+
+```bash
+cargo install wl-mitmproxy
+```
+
 For a quick Wayland-native test client, [foot](https://codeberg.org/dnkl/foot)
 is a good option because it is simple to launch directly through the proxy.
 
@@ -44,7 +50,10 @@ wl-mitmproxy --app-id <APP_ID> --proxy-socket <NAME_OR_PATH> [--proxy-runtime-di
 Run mode:
 
 ```text
-wl-mitmproxy --app-id <APP_ID> [--proxy-socket <NAME_OR_PATH>] [--proxy-runtime-dir <PATH>] -- <COMMAND> [ARGS...]
+wl-mitmproxy --app-id <APP_ID> \
+	[--proxy-socket <NAME_OR_PATH>] \
+	[--proxy-runtime-dir <PATH>] \
+	-- <COMMAND> [ARGS...]
 ```
 
 The `--` separator is the conventional boundary between `wl-mitmproxy` options
