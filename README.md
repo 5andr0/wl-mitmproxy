@@ -32,10 +32,37 @@ the proxied window.
 cargo build --release
 ```
 
+To build with a different upstream `wl-proxy` feature set, disable the default
+suite and select the features you want:
+
+```bash
+cargo build --release --no-default-features --features suite-weston-protocols
+```
+
 ## Install
 
 ```bash
 cargo install wl-mitmproxy
+```
+
+`wl-mitmproxy` forwards the published `wl-proxy` feature set, so install-time
+feature selection works with the standard Cargo flags.
+
+- The default feature set enables `suite-wayland-protocols`.
+- To select a different suite instead of the default, use
+	`--no-default-features --features <FEATURES>`.
+- Multiple suites or protocol-level features can be combined in one install.
+
+Example:
+
+```bash
+cargo install wl-mitmproxy --no-default-features --features suite-weston-protocols
+```
+
+Protocol-level selection works the same way:
+
+```bash
+cargo install wl-mitmproxy --no-default-features --features protocol-xdg_shell
 ```
 
 For a quick Wayland-native test client, [foot](https://codeberg.org/dnkl/foot)

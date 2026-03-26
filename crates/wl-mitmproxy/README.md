@@ -1,6 +1,15 @@
 # wl-mitmproxy
 
-For full documentation, usage examples, and project details, see:
+Default install/builds enable `suite-wayland-protocols` from `wl-proxy`.
+
+To select a different forwarded feature set:
+
+```bash
+cargo install wl-mitmproxy --no-default-features --features suite-weston-protocols
+```
+
+Full documentation, usage examples, and project details:
+
 https://github.com/5andr0/wl-mitmproxy
 
 ## License
