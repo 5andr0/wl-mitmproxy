@@ -1,5 +1,6 @@
 use std::{
     env, fs, io,
+    io::Write as _,
     os::{
         fd::OwnedFd,
         unix::{
@@ -21,6 +22,8 @@ use std::{
 };
 
 use clap::Parser;
+use env_logger::Env;
+use log::{error, info, warn};
 use signal_hook::{
     consts::signal::{SIGINT, SIGTERM},
     iterator::Signals,
@@ -168,7 +171,7 @@ impl XdgToplevelHandler for XdgToplevelProxy {
     fn handle_set_app_id(&mut self, slf: &Rc<XdgToplevel>, app_id: &str) {
         let forwarded_app_id = self.rewrite.app_id.as_deref().unwrap_or(app_id);
         if let Err(err) = slf.try_send_set_app_id(forwarded_app_id) {
-            eprintln!(
+            error!(
                 "wl-mitmproxy: failed to forward xdg_toplevel.set_app_id {:?}: {}",
                 forwarded_app_id,
                 err,
@@ -179,7 +182,7 @@ impl XdgToplevelHandler for XdgToplevelProxy {
     fn handle_set_title(&mut self, slf: &Rc<XdgToplevel>, title: &str) {
         let forwarded_title = self.rewrite.title.as_deref().unwrap_or(title);
         if let Err(err) = slf.try_send_set_title(forwarded_title) {
-            eprintln!(
+            error!(
                 "wl-mitmproxy: failed to forward xdg_toplevel.set_title {:?}: {}",
                 forwarded_title,
                 err,
@@ -205,11 +208,29 @@ impl XdgToplevelHandler for XdgToplevelProxy {
         last_signal: Arc<AtomicI32>,
     }
 
+    fn init_logging() -> Result<(), log::SetLoggerError> {
+        env_logger::Builder::from_env(Env::default().default_filter_or("error"))
+            .format(|buf, record| writeln!(buf, "{}", record.args()))
+            .try_init()
+    }
+
     fn main() -> ExitCode {
+        let logging_ready = match init_logging() {
+            Ok(()) => true,
+            Err(err) => {
+                eprintln!("wl-mitmproxy: failed to initialize logger: {err}");
+                false
+            }
+        };
+
         match run() {
             Ok(code) => code,
             Err(err) => {
-                eprintln!("wl-mitmproxy: {err}");
+                if logging_ready {
+                    error!("wl-mitmproxy: {err}");
+                } else {
+                    eprintln!("wl-mitmproxy: {err}");
+                }
                 ExitCode::FAILURE
             }
         }
@@ -302,7 +323,7 @@ impl XdgToplevelHandler for XdgToplevelProxy {
 
         command.spawn()?;
 
-        eprintln!(
+        info!(
             "wl-mitmproxy daemon started on {} ({})",
             socket.display_value,
             socket.listen_path.display()
@@ -324,7 +345,7 @@ impl XdgToplevelHandler for XdgToplevelProxy {
         };
 
         let (listener, _guard) = prepare_listener(&socket.listen_path)?;
-        eprintln!(
+        info!(
             "wl-mitmproxy listening on {} ({})",
             socket.display_value,
             socket.listen_path.display()
@@ -360,7 +381,7 @@ impl XdgToplevelHandler for XdgToplevelProxy {
 
         let server_thread = thread::spawn(move || serve(listener, &target_display, rewrite_config, Some(server_shutdown)));
 
-        eprintln!(
+        info!(
             "wl-mitmproxy launching child with WAYLAND_DISPLAY={} ({})",
             socket.display_value,
             socket.listen_path.display()
@@ -414,7 +435,7 @@ impl XdgToplevelHandler for XdgToplevelProxy {
                     let rewrite = rewrite.clone();
                     thread::spawn(move || {
                         if let Err(err) = run_client_session(stream, &target_display, &rewrite) {
-                            eprintln!("wl-mitmproxy session failed: {err}");
+                            error!("wl-mitmproxy session failed: {err}");
                         }
                     });
                 }
@@ -534,7 +555,7 @@ fn run_client_session(
                 SocketState::Available => return Ok(resolved),
                 SocketState::Active => {}
                 SocketState::Stale => {
-                    eprintln!("reusing stale socket {}", resolved.listen_path.display());
+                    warn!("reusing stale socket {}", resolved.listen_path.display());
                     fs::remove_file(&resolved.listen_path)?;
                     return Ok(resolved);
                 }
@@ -563,7 +584,7 @@ fn run_client_session(
                 ));
             }
             SocketState::Stale => {
-                eprintln!("reusing stale socket {}", path.display());
+                warn!("reusing stale socket {}", path.display());
                 fs::remove_file(path)?;
             }
         }
@@ -653,7 +674,10 @@ fn run_client_session(
         }
 
         if let Some(signal) = status.signal() {
-            eprintln!("child terminated by signal {signal}");
+            match signal {
+                SIGINT | SIGTERM => info!("child terminated by signal {signal}"),
+                _ => error!("child terminated by signal {signal}"),
+            }
         }
 
         ExitCode::FAILURE

@@ -1,6 +1,6 @@
 [package]
 name = "wl-mitmproxy"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 description = "Wayland MITM proxy for rewriting protocol messages"
 license = "MIT OR Apache-2.0"
@@ -124,6 +124,8 @@ protocol-cosmic_workspace_unstable_v2 = ["wl-proxy/protocol-cosmic_workspace_uns
 
 [dependencies]
 clap = { version = "4.6.0", features = ["derive", "env"] }
+env_logger = "0.11"
 libc = "0.2"
+log = "0.4"
 signal-hook = "0.4.3"
 wl-proxy = { version = "0.1.2", default-features = false }

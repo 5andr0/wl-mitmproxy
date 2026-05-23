@@ -2,6 +2,8 @@
 
 Default install/builds enable `suite-wayland-protocols` from `wl-proxy`.
 
+Runtime logging is controlled with `RUST_LOG`. By default only errors are emitted; set `RUST_LOG=info` to see normal proxy status messages.
+
 To select a different forwarded feature set:
 
 ```bash
